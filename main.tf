@@ -44,7 +44,7 @@ module "blog_sg" {
 # https://registry.terraform.io/modules/terraform-aws-modules/alb/aws/latest
 module "blog_alb" {
   source = "terraform-aws-modules/alb/aws"
-  version = "9.1.0"
+  version = "6.6.0"
 
   name    = "blog-alb"
   load_balancer_type = "application"
