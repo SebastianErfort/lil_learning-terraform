@@ -55,23 +55,23 @@ module "blog_alb" {
 
   target_groups = [
     {
-      name_prefix = "blog"
-      protocol    = "HTTP"
-      port        = 80
-      target_type = "instance"
+      name_prefix      = "blog-"
+      backend_protocol = "TCP"
+      backend_port     = 80
+      target_type      = "instance"
     }
   ]
 
-  listeners = {
-    http = {
-      port     = 80
-      protocol = "HTTP"
-
-      forward = {
-        target_group_key = "instance"
-      }
+  http_tcp_listeners = [
+    {
+      port               = 80
+      protocol           = "TCP"
+      target_group_index = 0
+      # forward = {
+      #   target_group_key = "instance"
+      # }
     }
-  }
+  ]
 
   tags = {
     Environment = "dev"
