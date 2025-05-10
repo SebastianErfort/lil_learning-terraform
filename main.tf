@@ -59,14 +59,6 @@ module "blog_alb" {
       protocol    = "HTTP"
       port        = 80
       target_type = "instance"
-
-      targets = {
-        for idx, instance_id in module.blog_autoscaling.autoscaling_group_instance_ids :
-        idx => {
-          target_id = instance_id
-          port      = 80
-        }
-      }
     }
   }
 
