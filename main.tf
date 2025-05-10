@@ -29,28 +29,24 @@ module "blog_vpc" {
   }
 }
 
-# https://registry.terraform.io/modules/terraform-aws-modules/autoscaling/aws/latest
-module "blog_autoscaling" {
-  source  = "terraform-aws-modules/autoscaling/aws"
-  version = "6.5.2"
-  name = "blog"
+module "blog_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "4.13.0"
 
-  image_id            = data.aws_ami.app_ami.id
-  instance_type       = var.instance_type
-
-  min_size            = 1
-  max_size            = 2
-  vpc_zone_identifier = module.blog_vpc.public_subnets
-  target_group_arns   = [module.blog_alb.arn]
-  security_groups     = [module.blog_sg.security_group_id]
+  vpc_id  = module.blog_vpc.vpc_id
+  name    = "blog"
+  ingress_rules = ["https-443-tcp","http-80-tcp"]
+  ingress_cidr_blocks = ["0.0.0.0/0"]
+  egress_rules = ["all-all"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
 }
 
 # https://registry.terraform.io/modules/terraform-aws-modules/alb/aws/latest
 module "blog_alb" {
   source = "terraform-aws-modules/alb/aws"
+  version = "9.1.0"
 
   name    = "blog-alb"
-
   load_balancer_type = "application"
 
   vpc_id          = module.blog_vpc.vpc_id
@@ -63,6 +59,14 @@ module "blog_alb" {
       protocol    = "HTTP"
       port        = 80
       target_type = "instance"
+
+      targets = {
+        for idx, instance_id in module.blog_autoscaling.autoscaling_group_instance_ids :
+        idx => {
+          target_id = instance_id
+          port      = 80
+        }
+      }
     }
   }
 
@@ -83,14 +87,17 @@ module "blog_alb" {
   }
 }
 
-module "blog_sg" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "4.13.0"
+# https://registry.terraform.io/modules/terraform-aws-modules/autoscaling/aws/latest
+module "blog_autoscaling" {
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "6.5.2"
 
-  vpc_id  = module.blog_vpc.vpc_id
-  name    = "blog"
-  ingress_rules = ["https-443-tcp","http-80-tcp"]
-  ingress_cidr_blocks = ["0.0.0.0/0"]
-  egress_rules = ["all-all"]
-  egress_cidr_blocks = ["0.0.0.0/0"]
+  name = "blog"
+  image_id            = data.aws_ami.app_ami.id
+  instance_type       = var.instance_type
+  min_size            = 1
+  max_size            = 2
+  vpc_zone_identifier = module.blog_vpc.public_subnets
+  target_group_arns   = [module.blog_alb.target_groups["instance"].arn]
+  security_groups     = [module.blog_sg.security_group_id]
 }
