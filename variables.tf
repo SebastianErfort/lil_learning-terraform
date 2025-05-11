@@ -39,8 +39,3 @@ variable "asg_max_size" {
   description = "Maximum instance count for the ASG"
   default     = 2
 }
-
-variable "blog_name" {
-  description = "Name for blog resources"
-  default     = "${var.environment.name}-blog"
-}
